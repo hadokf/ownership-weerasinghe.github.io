@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weerasinghe Enterprise | Live Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --neon-green: #00ff9d;
+            --neon-blue: #00bcd4;
+            --neon-purple: #bc13fe;
+            --text-main: #ffffff;
+            --text-muted: #8b9bb4;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(188, 19, 254, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 255, 157, 0.08) 0%, transparent 20%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Container for Responsive Design */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Section */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .brand h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, #fff, var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .market-cap {
+            text-align: right;
+        }
+
+        .market-cap span {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .market-cap strong {
+            font-size: 1.5rem;
+            color: var(--neon-green);
+            text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+        }
+
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+
+        /* Card Styles (Glassmorphism) */
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 188, 212, 0.1);
+        }
+
+        .card-header {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Layout Specifics */
+        .live-chart-section {
+            grid-column: span 12;
+            height: 450px;
+        }
+
+        .pie-section {
+            grid-column: span 5;
+            height: 400px;
+        }
+
+        .bar-section {
+            grid-column: span 7;
+            height: 400px;
+        }
+
+        /* Live Price Ticker */
+        .live-price-display {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--neon-blue);
+        }
+
+        .pulse-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+
+        /* Chart Canvas Size */
+        .chart-container {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            /* Subtract header height from card height */
+            height: calc(100% - 40px); 
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+            .pie-section, .bar-section {
+                grid-column: span 12;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            header { flex-direction: column; text-align: center; }
+            .market-cap { text-align: center; width: 100%; margin-top: 10px; }
+            
+            .live-chart-section { height: 350px; }
+            .pie-section { height: 450px; } /* Taller for mobile legend */
+            .bar-section { height: 350px; }
+            
+            .card { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="brand">
+                <h1>WEERASINGHE ENTERPRISE</h1>
+            </div>
+            <div class="market-cap">
+                <span>Total Valuation</span>
+                <strong>LKR 240 CRORES</strong>
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            
+            <div class="card live-chart-section">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="pulse-dot" id="statusDot"></span>
+                        LIVE MARKET PERFORMANCE
+                    </div>
+                    <div class="live-price-display" id="livePriceTicker">
+                        LKR 98,652,637
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="liveChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card pie-section">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="dot" style="background: var(--neon-purple)"></span>
+                        OWNERSHIP DISTRIBUTION
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card bar-section">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="dot" style="background: var(--neon-blue)"></span>
+                        EQUITY VALUE (LKR CRORES)
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- DATA SETUP ---
+        const totalValuation = 240; // Crores
+        const stakeholders = [
+            { name: "Anuhas Weerasinghe (Pres./Owner)", percent: 65, color: '#bc13fe' }, // Neon Purple
+            { name: "W. Aheshika Sewwandi", percent: 25, color: '#00bcd4' }, // Neon Blue
+            { name: "S. Wickramasinghe", percent: 5, color: '#00ff9d' }, // Neon Green
+            { name: "Pradeep", percent: 2, color: '#ffeb3b' }, // Yellow
+            { name: "Prabhash", percent: 1, color: '#ff5722' }, // Orange
+            { name: "Devinda", percent: 1, color: '#e91e63' }, // Pink
+            { name: "Kandy Industrial", percent: 1, color: '#ffffff' } // White
+        ];
+
+        // Process Data
+        const labels = stakeholders.map(s => s.name);
+        const percentages = stakeholders.map(s => s.percent);
+        const colors = stakeholders.map(s => s.color);
+        const valuesInCrores = percentages.map(p => (totalValuation * p / 100).toFixed(2));
+
+        // Global Chart Defaults
+        Chart.defaults.color = '#8b9bb4';
+        Chart.defaults.font.family = "'Outfit', sans-serif";
+        Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.05)';
+
+        // --- 1. LIVE CHART LOGIC (CUSTOM SIMULATION) ---
+        const liveCtx = document.getElementById('liveChart').getContext('2d');
+        
+        // Setup Gradient
+        const gradient = liveCtx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(0, 255, 157, 0.4)'); // Green top
+        gradient.addColorStop(1, 'rgba(0, 255, 157, 0)');   // Fade to bottom
+
+        // Initial Data Generation (Starting around 98M)
+        let currentPrice = 98652637;
+        let chartData = [];
+        let timeLabels = [];
+        
+        // Generate 50 historical points
+        for(let i=0; i<50; i++) {
+            chartData.push(currentPrice);
+            timeLabels.push(''); // Empty labels for clean look
+            // Minor fluctuation
+            currentPrice += Math.floor(Math.random() * 200000 - 100000); 
+        }
+
+        const liveChart = new Chart(liveCtx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Trade Value',
+                    data: chartData,
+                    borderColor: '#00ff9d',
+                    backgroundColor: gradient,
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4, // Smooth curves
+                    pointRadius: 0, // Hide points for clean line
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false, // Turn off animation for instant real-time feel
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#00ff9d',
+                        callbacks: {
+                            label: function(context) {
+                                return 'Value: LKR ' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { display: false }, // Hide x-axis
+                    y: {
+                        position: 'right',
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
+                }
+            }
+        });
+
+        // Real-time Update Loop
+        const tickerEl = document.getElementById('livePriceTicker');
+        const statusDot = document.getElementById('statusDot');
+
+        setInterval(() => {
+            // Random fluctuation algorithm
+            const volatility = 400000; 
+            const change = Math.floor((Math.random() - 0.5) * volatility);
+            currentPrice = chartData[chartData.length - 1] + change;
+
+            // Update Array (Remove first, add new)
+            chartData.shift();
+            chartData.push(currentPrice);
+
+            // Update Chart
+            liveChart.update();
+
+            // Update Text Ticker
+            tickerEl.innerText = "LKR " + currentPrice.toLocaleString();
+            
+            // Visual feedback (Green for up, Red for down)
+            if(change > 0) {
+                tickerEl.style.color = '#00ff9d'; // Green
+                statusDot.style.backgroundColor = '#00ff9d';
+                liveChart.data.datasets[0].borderColor = '#00ff9d';
+            } else {
+                tickerEl.style.color = '#ff3d71'; // Red
+                statusDot.style.backgroundColor = '#ff3d71';
+                liveChart.data.datasets[0].borderColor = '#ff3d71';
+            }
+        }, 1500); // Updates every 1.5 seconds
+
+
+        // --- 2. PIE CHART ---
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: percentages,
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%', // Thinner ring
+                plugins: {
+                    legend: {
+                        position: 'bottom', // Legend at bottom for mobile
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            color: '#fff'
+                        }
+                    }
+                }
+            }
+        });
+
+        // --- 3. BAR CHART ---
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Valuation (Crores LKR)',
+                    data: valuesInCrores,
+                    backgroundColor: colors,
+                    borderRadius: 6,
+                    barThickness: 'flex',
+                    maxBarThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // Horizontal bars (Better for long names on mobile)
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#8b9bb4' }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { 
+                            color: '#fff',
+                            font: { size: 11 } 
+                        }
+                    }
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
